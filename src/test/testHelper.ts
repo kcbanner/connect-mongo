@@ -16,6 +16,19 @@ export const makeCookie = () => {
   return cookie
 }
 
+export type makeDataType = {
+  foo: string
+  baz: {
+    cow?: string
+    chicken?: string
+    fish?: string
+    fox?: string
+  }
+  num: number
+  ice?: string
+  cookie?: ExpressSession.Cookie
+}
+
 // Create session data
 export const makeData = () => {
   return {
@@ -26,7 +39,7 @@ export const makeData = () => {
     },
     num: 1,
     cookie: makeCookie(),
-  }
+  } as makeDataType
 }
 
 export const makeDataNoCookie = () => {
@@ -38,7 +51,7 @@ export const makeDataNoCookie = () => {
       fox: 'nobody knows!',
     },
     num: 2,
-  }
+  } as makeDataType
 }
 
 export const createStoreHelper = (opt: Partial<ConnectMongoOptions> = {}) => {
@@ -53,10 +66,10 @@ export const createStoreHelper = (opt: Partial<ConnectMongoOptions> = {}) => {
   const storePromise = {
     length: util.promisify(store.length).bind(store),
     clear: util.promisify(store.clear).bind(store),
-    get: util.promisify(store.get).bind(store),
-    set: util.promisify(store.set).bind(store),
-    all: util.promisify(store.all).bind(store),
-    touch: util.promisify(store.touch).bind(store),
+    get: util.promisify(store.get<makeDataType>).bind(store),
+    set: util.promisify(store.set<makeDataType>).bind(store),
+    all: util.promisify(store.all<makeDataType>).bind(store),
+    touch: util.promisify(store.touch<makeDataType>).bind(store),
     destroy: util.promisify(store.destroy).bind(store),
     close: store.close.bind(store),
   }

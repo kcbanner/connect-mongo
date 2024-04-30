@@ -98,7 +98,7 @@ test.serial.cb('set and listen to event', (t) => {
     store.get(sid, (err, session) => {
       t.is(err, null)
       t.is(typeof session, 'object')
-      t.deepEqual(session, orgSession)
+      t.deepEqual(session, orgSession as unknown as SessionData)
       t.end()
     })
   })
@@ -120,7 +120,7 @@ test.serial.cb('set and listen to update event', (t) => {
   const orgSession = makeData()
   const sid = 'test-update-event'
   store.set(sid, orgSession)
-  store.set(sid, { ...orgSession, foo: 'new-bar' } as SessionData)
+  store.set(sid, { ...orgSession, foo: 'new-bar' })
   store.on('update', (sessionId) => {
     t.is(sessionId, sid)
     t.end()
@@ -212,10 +212,8 @@ test.serial('test custom serializer', async (t) => {
   const session = await storePromise.get(sid)
   t.is(typeof session, 'string')
   t.not(session, undefined)
-  // @ts-ignore
   orgSession.ice = 'test-ice-serializer'
-  // @ts-ignore
-  t.is(session, JSON.stringify(orgSession))
+  t.is(`${session}`, JSON.stringify(orgSession))
 })
 
 test.serial('test custom deserializer', async (t) => {
@@ -230,9 +228,7 @@ test.serial('test custom deserializer', async (t) => {
   await storePromise.set(sid, orgSession)
   const session = await storePromise.get(sid)
   t.is(typeof session, 'object')
-  // @ts-ignore
-  orgSession.cookie = orgSession.cookie.toJSON()
-  // @ts-ignore
+  if (orgSession.cookie) orgSession.cookie = orgSession.cookie.toJSON()
   orgSession.ice = 'test-ice-deserializer'
   t.not(session, undefined)
   t.deepEqual(session, orgSession)
@@ -242,7 +238,6 @@ test.serial('touch ops', async (t) => {
   ;({ store, storePromise } = createStoreHelper())
   const orgSession = makeDataNoCookie()
   const sid = 'test-touch'
-  // @ts-ignore
   await storePromise.set(sid, orgSession)
   const collection = await store.collectionP
   const session = await collection.findOne({ _id: sid })
@@ -263,7 +258,6 @@ test.serial('touch ops with touchAfter', async (t) => {
   ;({ store, storePromise } = createStoreHelper({ touchAfter: 1 }))
   const orgSession = makeDataNoCookie()
   const sid = 'test-touch-with-touchAfter'
-  // @ts-ignore
   await storePromise.set(sid, orgSession)
   const collection = await store.collectionP
   const session = await collection.findOne({ _id: sid })
@@ -281,7 +275,6 @@ test.serial('touch ops with touchAfter with touch', async (t) => {
   ;({ store, storePromise } = createStoreHelper({ touchAfter: 1 }))
   const orgSession = makeDataNoCookie()
   const sid = 'test-touch-with-touchAfter-should-touch'
-  // @ts-ignore
   await storePromise.set(sid, orgSession)
   const collection = await store.collectionP
   const session = await collection.findOne({ _id: sid })

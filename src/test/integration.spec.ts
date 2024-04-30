@@ -2,14 +2,8 @@ import test from 'ava'
 import request from 'supertest'
 import express from 'express'
 import session, { SessionOptions } from 'express-session'
-import MongoStore from '../'
+import MongoStore from '..'
 import { ConnectMongoOptions } from '../lib/MongoStore'
-
-declare module 'express-session' {
-  interface SessionData {
-    [key: string]: any
-  }
-}
 
 function createSupertetAgent(
   sessionOpts: SessionOptions,

@@ -82,16 +82,14 @@ function defaultSerializeFunction(
   session: session.SessionData
 ): session.SessionData {
   // Copy each property of the session to a new object
-  const obj = {}
+  const obj = {} as session.SessionData
   let prop
   for (prop in session) {
     if (prop === 'cookie') {
       // Convert the cookie instance to an object, if possible
       // This gets rid of the duplicate object under session.cookie.data property
-      // @ts-ignore FIXME:
       obj.cookie = session.cookie.toJSON
-        ? // @ts-ignore FIXME:
-          session.cookie.toJSON()
+        ? session.cookie.toJSON()
         : session.cookie
     } else {
       // @ts-ignore FIXME:
@@ -287,8 +285,7 @@ export default class MongoStore extends session.Store {
       ).catch((err) => {
         throw new Error(err)
       })
-      // @ts-ignore
-      session.session = JSON.parse(plaintext)
+      session.session = JSON.parse(`${plaintext}`)
     }
   }
 
@@ -296,9 +293,12 @@ export default class MongoStore extends session.Store {
    * Get a session from the store given a session ID (sid)
    * @param sid session ID
    */
-  get(
+  get<customSessionType>(
     sid: string,
-    callback: (err: any, session?: session.SessionData | null) => void
+    callback: (
+      err: unknown | null,
+      session?: session.SessionData | customSessionType | null
+    ) => void
   ): void {
     ;(async () => {
       try {
@@ -334,10 +334,10 @@ export default class MongoStore extends session.Store {
    * @param sid session ID
    * @param session session object
    */
-  set(
+  set<customSessionType>(
     sid: string,
-    session: session.SessionData,
-    callback: (err: any) => void = noop
+    session: session.SessionData | customSessionType,
+    callback: (err: unknown | null) => void = noop
   ): void {
     ;(async () => {
       try {
@@ -353,7 +353,12 @@ export default class MongoStore extends session.Store {
           session: this.transformFunctions.serialize(session),
         }
         // Expire handling
-        if (session?.cookie?.expires) {
+        if (
+          session &&
+          typeof session === 'object' &&
+          'cookie' in session &&
+          session.cookie.expires
+        ) {
           s.expires = new Date(session.cookie.expires)
         } else {
           // If there's no expiration date specified, it is
@@ -401,10 +406,12 @@ export default class MongoStore extends session.Store {
     })()
   }
 
-  touch(
+  touch<customSessionType>(
     sid: string,
-    session: session.SessionData & { lastModified?: Date },
-    callback: (err: any) => void = noop
+    session:
+      | (session.SessionData & { lastModified?: Date })
+      | (customSessionType & { lastModified?: Date }),
+    callback: (err: unknown | null) => void = noop
   ): void {
     ;(async () => {
       try {
@@ -432,7 +439,12 @@ export default class MongoStore extends session.Store {
           updateFields.lastModified = currentDate
         }
 
-        if (session?.cookie?.expires) {
+        if (
+          session &&
+          typeof session === 'object' &&
+          'cookie' in session &&
+          session.cookie.expires
+        ) {
           updateFields.expires = new Date(session.cookie.expires)
         } else {
           updateFields.expires = new Date(Date.now() + this.options.ttl * 1000)
@@ -458,12 +470,13 @@ export default class MongoStore extends session.Store {
   /**
    * Get all sessions in the store as an array
    */
-  all(
+  all<customSessionType>(
     callback: (
-      err: any,
+      err: unknown | null,
       obj?:
         | session.SessionData[]
-        | { [sid: string]: session.SessionData }
+        | customSessionType[]
+        | { [sid: string]: session.SessionData | customSessionType }
         | null
     ) => void
   ): void {
@@ -496,7 +509,7 @@ export default class MongoStore extends session.Store {
    * Destroy/delete a session from the store given a session ID (sid)
    * @param sid session ID
    */
-  destroy(sid: string, callback: (err: any) => void = noop): void {
+  destroy(sid: string, callback: (err: unknown | null) => void = noop): void {
     debug(`MongoStore#destroy=${sid}`)
     this.collectionP
       .then((colleciton) =>
@@ -527,7 +540,7 @@ export default class MongoStore extends session.Store {
   /**
    * Delete all sessions from the store.
    */
-  clear(callback: (err: any) => void = noop): void {
+  clear(callback: (err: unknown | null) => void = noop): void {
     debug('MongoStore#clear()')
     this.collectionP
       .then((collection) => collection.drop())
