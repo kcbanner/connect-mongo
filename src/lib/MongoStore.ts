@@ -72,6 +72,8 @@ type InternalSessionType = {
   session: any
   expires?: Date
   lastModified?: Date
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -380,6 +382,16 @@ export default class MongoStore extends session.Store {
           s.session = data as unknown as session.SessionData
         }
         const collection = await this.collectionP
+
+        // Determine if it's a new document or an update
+        const existingDoc = await collection.findOne({ _id: s._id });
+
+        if (!existingDoc) {
+          s.createdAt = new Date()  // Initialize createdAt
+        } else {
+          s.updatedAt = new Date()  // Update updatedAt
+        }
+
         const rawResp = await collection.updateOne(
           { _id: s._id },
           { $set: s },
